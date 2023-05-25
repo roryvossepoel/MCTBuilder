@@ -10,4 +10,8 @@ Instructions:
 The drivers are downloaded, extracted and selected based on the contents of a CSV-file.
 The Drivers-column contains drivers that will be injected. All others will be removed. All drivers will be kept of no drivers are specified in the Drivers-column.
     
- Vendors of supported driver packages: Microsoft, HP, Dell and Lenovo
+ Vendors of supported driver packages:
+ - Microsoft
+ - HP
+ - Dell
+ - Lenovo
