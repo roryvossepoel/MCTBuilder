@@ -17,13 +17,13 @@
     HP;              Generic;            https://ftp.hp.com/pub/softpaq/sp145001-145500/sp145240.exe;
     Lenovo;          ThinkPad E14 Gen 5; https://download.lenovo.com/pccbbs/mobiles/tp_e14_r14-g-5_e16-g-1_mt21jk-21jl_21jm_21jn-21jq_winpe_202304.exe;
 
-    The drivers are downloaded, extracted and selected based on the contents of a CSV-file.
+    The drivers are downloaded, extracted and selected based on the content of the CSV-file.
     The Drivers-column contains drivers that will be injected. All others will be removed. All drivers will be kept of no drivers are specified in the Drivers-column.
     
     Vendors of supported driver packages: Microsoft, HP, Dell and Lenovo
 
-.PARAMETER csvFile
-    Specify the path to the csv-file that contains the driver information.
+.PARAMETER CSVFile
+    Specify the path to the CSV-file that contains the driver information.
 
 .PARAMETER LogDir
     Specify the folder to the log directory.
@@ -35,10 +35,10 @@
     Specify whether the Windows Answer File (autounattend.xml) must be copied to the root of the USB-drive.
 
 .EXAMPLE
-    Invoke-MCTBuilder.ps1 -csvFile 'C:\MCTBrun\Drivers.csv' -LogDir 'C:\MCTBrun\' -WorkingDir 'C:\MCTBrun\' -AnswerFile:$true" 
+    Invoke-MCTBuilder.ps1 -CSVFile 'C:\MCTBrun\Drivers.csv' -LogDir 'C:\MCTBrun\' -WorkingDir 'C:\MCTBrun\' -AnswerFile:$true" 
 
 .NOTES
-    Version                 : 1.0.0
+    Version                 : 1.0.1
     FileName                : Invoke-MCTBuilder.ps1
     Author                  : Rory Vossepoel
     Contact                 : @roryvossepoel
@@ -47,6 +47,9 @@
     Contributors            : Please reach out! :)
 
     Version History
+    1.0.1 (23-05-2023)      : Log mounted WIM-information after conversion from install.esd to install.wim.
+                              Copy log-file to the root of the USB-Drive after completion.
+                              Semantic improvements.
     1.0.0 (23-05-2023)      : Initial version
 
 .CREDITS
@@ -66,7 +69,7 @@
 [CmdletBinding()]
 Param(
     [Parameter(Mandatory = $True, HelpMessage = 'Enter the path to the CSV-file.')]    
-    [string]$csvFile,
+    [string]$CSVFile,
     [Parameter(Mandatory = $True, HelpMessage = 'Enter the path to the Log-directory.')]    
     [string]$LogDir,
     [Parameter(Mandatory = $True, HelpMessage = 'Enter the path to the Working-directory.')]    
@@ -92,8 +95,8 @@ Function Write-LogEntry
 	)
 
     # Determine log file location
-    $LogFilePath = Join-Path -Path $LogDir -ChildPath $FileName
-		
+    $global:LogFilePath = Join-Path -Path $LogDir -ChildPath $FileName
+
     # Construct time stamp for log entry
     if(-not(Test-Path -Path 'variable:global:TimezoneBias'))
     {
@@ -172,7 +175,7 @@ function Invoke-MCTBuilder {
 
     try {
         Write-LogEntry -Value "Importing the CSV-file." -Severity 1
-        $Drivers = Import-Csv $csvFile -Delimiter ";" -Verbose -ErrorAction Stop
+        $Drivers = Import-Csv $CSVFile -Delimiter ";" -Verbose -ErrorAction Stop
         $LogMessage = "Successfully imported the CSV-file."
         Write-LogEntry -Value $LogMessage -Severity 1
     }
@@ -489,7 +492,17 @@ function Invoke-MCTBuilder {
 
     try {
         Export-WindowsImage -SourceImagePath "$GetInstallESD" -SourceName "Windows 11 Pro" -DestinationImagePath "$WorkingDir\Wim\install.wim" -CompressionType Max -CheckIntegrity -Verbose
+
+        $WimInfo = Get-WindowsImage -ImagePath "$WorkingDir\Wim\install.wim" -Index 1 | Select-Object ImageName, Version, Languages, @{Name="Size"; Expression={[math]::round($_.ImageSize/1MB, 2)}}
+        
         Write-LogEntry -Value ("Exported install.esd to install.wim: " + $WorkingDir + "\Wim\install.wim") -Severity 1
+
+        Write-LogEntry -Value "############## OS Information ##############" -Severity 1
+        Write-LogEntry -Value ("OS Name: " + $($WimInfo).ImageName) -Severity 1
+        Write-LogEntry -Value ("OS Version: " + $($WimInfo).Version) -Severity 1
+        Write-LogEntry -Value ("OS Language: " + $($WimInfo).Languages) -Severity 1
+        Write-LogEntry -Value ("OS Size: " + $($WimInfo).Size + " MB") -Severity 1
+        Write-LogEntry -Value "############################################" -Severity 1
     }
     catch {
         $LogMessage = "Error exporting install.esd to install.wim: $_"
@@ -678,12 +691,27 @@ $autounattend = @"
             Write-LogEntry -Value "Copied Windows Answer File (autounattend.xml) to the root of the USB-drive." -Severity 1
         }
         catch {
-            $LogMessage = "Error copying Windows Answer File (autounattend.xml)to the root of the USB-drive: $_"
+            $LogMessage = "Error copying Windows Answer File (autounattend.xml) to the root of the USB-drive: $_"
             Write-LogEntry -Value $LogMessage -Severity 3
             throw $LogMessage
         }
     }
+    
+    # Copy Log File (MCTBuilder.log) to the root of the USB-drive.
+    Write-LogEntry -Value "Copying Log File (MCTBuilder.log) to the root of the USB-drive." -Severity 1
+
+    try {
+        Copy-Item $LogFilePath ($($USBDrive).DeviceID) -Force -Verbose
+        Write-LogEntry -Value "Copied Log File (MCTBuilder.log) to the root of the USB-drive." -Severity 1
+    }
+    catch {
+        $LogMessage = "Error copying Log File (MCTBuilder.log) to the root of the USB-drive: $_"
+        Write-LogEntry -Value $LogMessage -Severity 3
+        throw $LogMessage
+    }
 }
+
+Write-LogEntry -Value "Begin MCTBuilder" -Severity 1
 
 # Check if invoke-MCTBuilder.ps1 is running with Administrative permissions
 Test-Administrator
@@ -693,3 +721,5 @@ Create-WorkingFolder
 
 # Run MCTBuilder
 Invoke-MCTBuilder
+
+Write-LogEntry -Value "End MCTBuilder" -Severity 1
