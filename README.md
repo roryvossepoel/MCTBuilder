@@ -8,7 +8,7 @@ Instructions:
 4. Run Invoke-MCTBuilder.ps1 with administrative permissions
 
 The drivers are downloaded, extracted and selected based on the contents of the CSV-File.
-The Drivers-column contains drivers that will be injected. All others will be removed. All drivers will be kept of no drivers are specified in the Drivers-column.
+The Drivers-column contains drivers that will be injected. All others will be removed. All drivers will be kept if no drivers are specified in the Drivers-column.
     
  Vendors of supported driver packages:
  - Microsoft
