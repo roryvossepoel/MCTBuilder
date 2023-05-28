@@ -18,7 +18,7 @@
     Lenovo;          ThinkPad E14 Gen 5; https://download.lenovo.com/pccbbs/mobiles/tp_e14_r14-g-5_e16-g-1_mt21jk-21jl_21jm_21jn-21jq_winpe_202304.exe;
 
     The drivers are downloaded, extracted and selected based on the content of the CSV-file.
-    The Drivers-column contains drivers that will be injected. All others will be removed. All drivers will be kept of no drivers are specified in the Drivers-column.
+    The Drivers-column contains drivers that will be injected. All others will be removed. All drivers will be kept if no drivers are specified in the Drivers-column.
     
     Vendors of supported driver packages: Microsoft, HP, Dell and Lenovo
 
@@ -62,8 +62,8 @@
     Dell Drivers for WinPE             : https://www.dell.com/support/kbdoc/nl-nl/000108642/winpe-10-driverpakket
     Microsoft Drivers for WinPE        : https://learn.microsoft.com/en-us/surface/deploy-windows-10-to-surface-devices-with-mdt
     Lenovo Drivers for WinPE           : https://support.lenovo.com/nl/nl/solutions/ht074984-microsoft-system-center-configuration-manager-sccm-and-microsoft-deployment-toolkit-mdt-package-index
-    Windows Anser File Generator 1     : https://www.windowsafg.com/
-    Windows Anser File Generator 2     : https://schneegans.de/windows/unattend-generator/
+    Windows Anser File Generator 1     : https://www.windowsafg.com
+    Windows Anser File Generator 2     : https://schneegans.de/windows/unattend-generator
 #>
 
 [CmdletBinding()]
